@@ -7,14 +7,18 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/openjdk:8-jdk
+      - image: circleci/circleci/openjdk:8-jdk-browsers
+      - image: circleci/postgres:9.6.3-alpine
+      environment:
+          POSTGRES_USER: root
+          POSTGRES_DB: circle_test
       
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/postgres:9.4
 
-    working_directory: ~/repo
+    working_directory: ~/podam
 
     environment:
       # Customize the JVM maximum heap limit
@@ -26,20 +30,24 @@ jobs:
 
       # Download and cache dependencies
       - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "build.gradle" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
-      - run: gradle dependencies
+          key:podam-{{ checksum "pom.xml" }}
+          
+          
+      - run: mvn dependency:go-offline
 
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "build.gradle" }}
+          key: podam--{{ checksum "pom.xml" }}
         
       # run tests!
-      - run: gradle test
+      - run: mvn package
+      
+      - store_test_results:
+          path: target/surefire-reports
+          
+      - store_artifacts:
+          path: target/podam-0.0.1-SNAPSHOT.jar
 
 
 
